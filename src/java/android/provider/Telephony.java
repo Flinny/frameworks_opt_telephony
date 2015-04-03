@@ -1226,6 +1226,49 @@ public final class Telephony {
                 }
                 return msgs;
             }
+
+            /**
+             * Read the normalized addresses out of PDUs
+             * @param pdus bytes for PDUs
+             * @param format the format of the message
+             * @return a list of Addresses for the PDUs
+             * @hide
+             */
+            public static List<String> getNormalizedAddressesFromPdus(byte[][] pdus,
+                    String format) {
+                int pduCount = pdus.length;
+                SmsMessage[] msgs = new SmsMessage[pduCount];
+                List<String> addresses = new ArrayList<String>();
+
+                for (int i = 0; i < pduCount; i++) {
+                    byte[] pdu = (byte[]) pdus[i];
+                    msgs[i] = SmsMessage.createFromPdu(pdu, format);
+                    String originatingAddress = msgs[i].getOriginatingAddress();
+                    if (!TextUtils.isEmpty(originatingAddress)) {
+                        String normalized = normalizeDigitsOnly(originatingAddress);
+                        addresses.add(normalized);
+                    }
+                }
+                return addresses;
+            }
+
+            private static String normalizeDigitsOnly(String number) {
+                return normalizeDigits(number, false /* strip non-digits */).toString();
+            }
+
+            private static StringBuilder normalizeDigits(String number, boolean keepNonDigits) {
+                StringBuilder normalizedDigits = new StringBuilder(number.length());
+                for (char c : number.toCharArray()) {
+                    int digit = Character.digit(c, 10);
+                    if (digit != -1) {
+                        normalizedDigits.append(digit);
+                    } else if (keepNonDigits) {
+                        normalizedDigits.append(c);
+                    }
+                }
+                return normalizedDigits;
+            }
+
         }
     }
 
